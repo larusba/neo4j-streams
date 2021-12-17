@@ -6,6 +6,7 @@ import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.config.TopicConfig
 import org.apache.kafka.common.serialization.ByteArraySerializer
 import org.neo4j.logging.Log
+import streams.config.StreamsConfig
 import streams.extensions.getInt
 import streams.extensions.toPointCase
 import streams.utils.JSONUtils
@@ -30,7 +31,8 @@ data class KafkaConfiguration(val bootstrapServers: String = "localhost:9092",
                               val lingerMs: Int = 1,
                               val topicDiscoveryPollingInterval: Long = TimeUnit.MINUTES.toMillis(5),
                               val streamsLogCompactionStrategy: String = LogStrategy.delete.toString(),
-                              val extraProperties: Map<String, String> = emptyMap()) {
+                              val extraProperties: Map<String, String> = emptyMap(),
+                              val adminClientApiEnabled: Boolean = StreamsConfig.KAFKA_ADMIN_CLIENT_API_ENABLED_VALUE) {
 
     companion object {
         // Visible for testing
@@ -56,7 +58,11 @@ data class KafkaConfiguration(val bootstrapServers: String = "localhost:9092",
                     topicDiscoveryPollingInterval = config.getOrDefault("topic.discovery.polling.interval",
                             default.topicDiscoveryPollingInterval).toString().toLong(),
                     streamsLogCompactionStrategy = config.getOrDefault("streams.log.compaction.strategy", default.streamsLogCompactionStrategy),
-                    extraProperties = extraProperties // for what we don't provide a default configuration
+                    extraProperties = extraProperties,
+                    adminClientApiEnabled = config.getOrDefault("admin.client.api.enabled",
+                            default.adminClientApiEnabled)
+                            .toString()
+                            .toBoolean() // for what we don't provide a default configuration
             )
         }
 

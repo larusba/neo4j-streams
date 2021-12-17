@@ -18,6 +18,7 @@ import streams.StreamsSinkConfigurationTest
 import streams.config.StreamsConfig
 import streams.service.TopicValidationException
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class KafkaSinkConfigurationTest {
@@ -37,6 +38,7 @@ class KafkaSinkConfigurationTest {
         assertEquals(true, default.enableAutoCommit)
         assertEquals(false, default.streamsAsyncCommit)
         assertEquals(emptyMap(), default.extraProperties)
+        assertTrue { default.adminClientApiEnabled }
     }
 
     @Test
@@ -48,6 +50,7 @@ class KafkaSinkConfigurationTest {
         val group = "foo"
         val autoOffsetReset = "latest"
         val autoCommit = "false"
+        val kafkaAdminClientApiEnabled = "false"
         val config = mapOf(topicKey to topicValue,
                 "kafka.bootstrap.servers" to bootstrap,
                 "kafka.auto.offset.reset" to autoOffsetReset,
@@ -55,14 +58,16 @@ class KafkaSinkConfigurationTest {
                 "kafka.group.id" to group,
                 "kafka.streams.async.commit" to "true",
                 "kafka.key.deserializer" to ByteArrayDeserializer::class.java.name,
-                "kafka.value.deserializer" to KafkaAvroDeserializer::class.java.name)
+                "kafka.value.deserializer" to KafkaAvroDeserializer::class.java.name,
+                "kafka.admin.client.api.enabled" to kafkaAdminClientApiEnabled)
         val expectedMap = mapOf("bootstrap.servers" to bootstrap,
                 "auto.offset.reset" to autoOffsetReset, "enable.auto.commit" to autoCommit, "group.id" to group,
                 ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to ByteArrayDeserializer::class.java.toString(),
                 ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to ByteArrayDeserializer::class.java.toString(),
                 "streams.async.commit" to "true",
                 "key.deserializer" to ByteArrayDeserializer::class.java.name,
-                "value.deserializer" to KafkaAvroDeserializer::class.java.name)
+                "value.deserializer" to KafkaAvroDeserializer::class.java.name,
+                "admin.client.api.enabled" to kafkaAdminClientApiEnabled)
 
         val kafkaSinkConfiguration = KafkaSinkConfiguration.create(config, defaultDbName, isDefaultDb = true)
         StreamsSinkConfigurationTest.testFromConf(kafkaSinkConfiguration.streamsSinkConfiguration, topic, topicValue)
@@ -70,6 +75,7 @@ class KafkaSinkConfigurationTest {
         assertEquals(bootstrap, kafkaSinkConfiguration.bootstrapServers)
         assertEquals(autoOffsetReset, kafkaSinkConfiguration.autoOffsetReset)
         assertEquals(group, kafkaSinkConfiguration.groupId)
+        assertFalse { kafkaSinkConfiguration.adminClientApiEnabled }
         val resultMap = kafkaSinkConfiguration
                 .asProperties()
                 .map { it.key.toString() to it.value.toString() }
@@ -94,6 +100,7 @@ class KafkaSinkConfigurationTest {
         val autoOffsetReset = "latest"
         val autoCommit = "false"
         val asyncCommit = "true"
+        val kafkaAdminClientApiEnabled = "false"
         val config = mapOf(topicKey to topicValue,
                 topicKeyFoo to topicValueFoo,
                 "kafka.bootstrap.servers" to bootstrap,
@@ -102,14 +109,16 @@ class KafkaSinkConfigurationTest {
                 "kafka.group.id" to group,
                 "kafka.streams.async.commit" to asyncCommit,
                 "kafka.key.deserializer" to ByteArrayDeserializer::class.java.name,
-                "kafka.value.deserializer" to KafkaAvroDeserializer::class.java.name)
+                "kafka.value.deserializer" to KafkaAvroDeserializer::class.java.name,
+                "kafka.admin.client.api.enabled" to kafkaAdminClientApiEnabled)
         val expectedMap = mapOf("bootstrap.servers" to bootstrap,
                 "auto.offset.reset" to autoOffsetReset, "enable.auto.commit" to autoCommit, "group.id" to "$group-$dbName",
                 ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to ByteArrayDeserializer::class.java.toString(),
                 ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to ByteArrayDeserializer::class.java.toString(),
                 "key.deserializer" to ByteArrayDeserializer::class.java.name,
                 "streams.async.commit" to asyncCommit,
-                "value.deserializer" to KafkaAvroDeserializer::class.java.name)
+                "value.deserializer" to KafkaAvroDeserializer::class.java.name,
+                "admin.client.api.enabled" to kafkaAdminClientApiEnabled)
 
         val kafkaSinkConfiguration = KafkaSinkConfiguration.create(config, dbName, isDefaultDb = false)
         StreamsSinkConfigurationTest.testFromConf(kafkaSinkConfiguration.streamsSinkConfiguration, topic, topicValueFoo)
@@ -179,5 +188,4 @@ class KafkaSinkConfigurationTest {
             throw e
         }
     }
-
 }

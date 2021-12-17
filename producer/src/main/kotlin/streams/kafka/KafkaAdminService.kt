@@ -15,13 +15,13 @@ import streams.utils.StreamsUtils
 import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
 
-class KafkaAdminService(private val props: KafkaConfiguration, private val allTopics: List<String>, private val log: Log) {
+class KafkaAdminService(private val props: KafkaConfiguration, private val allTopics: List<String>, private val log: Log) : AdminService {
     private val client = AdminClient.create(props.asProperties())
     private val kafkaTopics: MutableSet<String> = Collections.newSetFromMap(ConcurrentHashMap<String, Boolean>())
     private val isAutoCreateTopicsEnabled = KafkaValidationUtils.isAutoCreateTopicsEnabled(client)
     private lateinit var job: Job
 
-    fun start() {
+    override fun start() {
         if (!isAutoCreateTopicsEnabled) {
             job = GlobalScope.launch(Dispatchers.IO) {
                 while (isActive) {
@@ -39,7 +39,7 @@ class KafkaAdminService(private val props: KafkaConfiguration, private val allTo
         }
     }
 
-    fun stop() {
+    override fun stop() {
         StreamsUtils.ignoreExceptions({
             runBlocking {
                 job.cancelAndJoin()
@@ -47,10 +47,10 @@ class KafkaAdminService(private val props: KafkaConfiguration, private val allTo
         }, UninitializedPropertyAccessException::class.java)
     }
 
-    fun isValidTopic(topic: String) = when (isAutoCreateTopicsEnabled) {
+    override fun isValidTopic(topic: String) = when (isAutoCreateTopicsEnabled) {
         true -> true
         else -> kafkaTopics.contains(topic)
     }
 
-    fun getInvalidTopics() = KafkaValidationUtils.getInvalidTopics(client, allTopics)
+    override fun getInvalidTopics() = KafkaValidationUtils.getInvalidTopics(client, allTopics)
 }

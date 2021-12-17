@@ -38,14 +38,15 @@ data class KafkaSinkConfiguration(val bootstrapServers: String = "localhost:9092
                                   val streamsSinkConfiguration: StreamsSinkConfiguration = StreamsSinkConfiguration(),
                                   val enableAutoCommit: Boolean = true,
                                   val streamsAsyncCommit: Boolean = false,
-                                  val extraProperties: Map<String, String> = emptyMap()) {
+                                  val extraProperties: Map<String, String> = emptyMap(),
+                                  val adminClientApiEnabled: Boolean = StreamsConfig.KAFKA_ADMIN_CLIENT_API_ENABLED_VALUE) {
 
     companion object {
 
         fun from(cfg: Map<String, String>, dbName: String, isDefaultDb: Boolean): KafkaSinkConfiguration {
             val kafkaCfg = create(cfg, dbName, isDefaultDb)
             validate(kafkaCfg)
-            val invalidTopics = getInvalidTopics(kafkaCfg.asProperties(), kafkaCfg.streamsSinkConfiguration.topics.allTopics())
+            val invalidTopics = if (kafkaCfg.adminClientApiEnabled) getInvalidTopics(kafkaCfg.asProperties(), kafkaCfg.streamsSinkConfiguration.topics.allTopics()) else emptyList()
             return if (invalidTopics.isNotEmpty()) {
                 kafkaCfg.copy(streamsSinkConfiguration = StreamsSinkConfiguration.from(cfg, dbName, invalidTopics, isDefaultDb))
             } else {
@@ -65,7 +66,6 @@ data class KafkaSinkConfiguration(val bootstrapServers: String = "localhost:9092
 
             val streamsSinkConfiguration = StreamsSinkConfiguration.from(configMap = cfg, dbName = dbName, isDefaultDb = isDefaultDb)
 
-
             return default.copy(keyDeserializer = config.getOrDefault(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, default.keyDeserializer),
                     valueDeserializer = config.getOrDefault(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, default.valueDeserializer),
                     bootstrapServers = config.getOrDefault(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, default.bootstrapServers),
@@ -74,7 +74,8 @@ data class KafkaSinkConfiguration(val bootstrapServers: String = "localhost:9092
                     enableAutoCommit = config.getOrDefault(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, default.enableAutoCommit).toString().toBoolean(),
                     streamsAsyncCommit = config.getOrDefault("streams.async.commit", default.streamsAsyncCommit).toString().toBoolean(),
                     streamsSinkConfiguration = streamsSinkConfiguration,
-                    extraProperties = extraProperties // for what we don't provide a default configuration
+                    extraProperties = extraProperties,
+                    adminClientApiEnabled = config.getOrDefault("admin.client.api.enabled", default.adminClientApiEnabled).toString().toBoolean()// for what we don't provide a default configuration
             )
         }
 

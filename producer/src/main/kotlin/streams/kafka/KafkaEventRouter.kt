@@ -11,17 +11,13 @@ import org.apache.kafka.common.errors.OutOfOrderSequenceException
 import org.apache.kafka.common.errors.ProducerFencedException
 import org.neo4j.graphdb.GraphDatabaseService
 import org.neo4j.logging.Log
-import org.neo4j.logging.internal.LogService
-import streams.StreamsEventRouterConfiguration
-import streams.asSourceRecordKey
-import streams.asSourceRecordValue
-import streams.toMap
 import streams.StreamsEventRouter
-import streams.config.StreamsConfig
+import streams.StreamsEventRouterConfiguration
 import streams.events.StreamsEvent
 import streams.events.StreamsPluginStatus
 import streams.events.StreamsTransactionEvent
 import streams.extensions.isDefaultDb
+import streams.toMap
 import streams.utils.JSONUtils
 import streams.utils.KafkaValidationUtils.getInvalidTopicsError
 import streams.utils.StreamsUtils
@@ -29,9 +25,9 @@ import java.util.Properties
 import java.util.UUID
 
 
-class KafkaEventRouter(private val config: Map<String, String>,
-                       private val db: GraphDatabaseService,
-                       private val log: Log): StreamsEventRouter(config, db, log) {
+abstract class KafkaEventRouter(private val config: Map<String, String>,
+                                private val db: GraphDatabaseService,
+                                private val log: Log): StreamsEventRouter(config, db, log) {
 
     override val eventRouterConfiguration: StreamsEventRouterConfiguration = StreamsEventRouterConfiguration
         .from(config, db.databaseName(), db.isDefaultDb(), log)
@@ -41,7 +37,7 @@ class KafkaEventRouter(private val config: Map<String, String>,
 
     private var producer: Neo4jKafkaProducer<ByteArray, ByteArray>? = null
     private val kafkaConfig by lazy { KafkaConfiguration.from(config, log) }
-    private val kafkaAdminService by lazy { KafkaAdminService(kafkaConfig, eventRouterConfiguration.allTopics(), log) }
+    private val kafkaAdminService by lazy { AdminService.getInstance(kafkaConfig, eventRouterConfiguration.allTopics(), log) }
 
     override fun printInvalidTopics() {
         val invalidTopics = kafkaAdminService.getInvalidTopics()
@@ -56,6 +52,10 @@ class KafkaEventRouter(private val config: Map<String, String>,
     }
 
     override fun start() = runBlocking {
+
+        //val adminServiceFactory = AdminServiceFactory(kafkaConfig, eventRouterConfiguration.allTopics(), log)
+        //kafkaAdminService = adminServiceFactory.getAdminService(kafkaConfig.adminClientApiEnabled)!!
+
         mutex.withLock(producer) {
             if (status(producer) == StreamsPluginStatus.RUNNING) {
                 return@runBlocking
