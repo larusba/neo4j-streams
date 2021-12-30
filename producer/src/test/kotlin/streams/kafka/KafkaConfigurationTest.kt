@@ -22,7 +22,8 @@ class KafkaConfigurationTest {
                 "kafka.linger.ms" to 10,
                 "kafka.fetch.min.bytes" to 1234,
                 "kafka.topic.discovery.polling.interval" to 0L,
-                "kafka.streams.log.compaction.strategy" to "delete")
+                "kafka.streams.log.compaction.strategy" to "delete",
+                "kafka.admin.client.api.enabled" to false)
 
         val kafkaConfig = KafkaConfiguration.create(map.mapValues { it.value.toString() })
 
@@ -46,5 +47,6 @@ class KafkaConfigurationTest {
         assertEquals(map["kafka.fetch.min.bytes"].toString(), properties["fetch.min.bytes"])
         assertEquals(map["kafka.topic.discovery.polling.interval"], properties["topic.discovery.polling.interval"])
         assertEquals(map["kafka.streams.log.compaction.strategy"], properties["streams.log.compaction.strategy"])
+        assertEquals(map["kafka.admin.client.api.enabled"], properties["admin.client.api.enabled"])
     }
 }

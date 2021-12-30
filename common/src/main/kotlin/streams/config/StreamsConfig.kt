@@ -41,6 +41,8 @@ class StreamsConfig(private val log: Log, private val dbms: DatabaseManagementSe
         const val POLL_INTERVAL = "streams.sink.poll.interval"
         const val INSTANCE_WAIT_TIMEOUT = "streams.wait.timeout"
         const val INSTANCE_WAIT_TIMEOUT_VALUE = 120000L
+        const val KAFKA_ADMIN_CLIENT_API_ENABLED = "kafka.admin.client.api.enabled"
+        const val KAFKA_ADMIN_CLIENT_API_ENABLED_VALUE = true
 
         private const val DEFAULT_TRIGGER_PERIOD: Int = 10000
 
@@ -83,6 +85,8 @@ class StreamsConfig(private val log: Log, private val dbms: DatabaseManagementSe
         fun getSystemDbWaitTimeout(config: Map<String, Any?>) = config.getOrDefault(SYSTEM_DB_WAIT_TIMEOUT, SYSTEM_DB_WAIT_TIMEOUT_VALUE).toString().toLong()
 
         fun getInstanceWaitTimeout(config: Map<String, Any?>) = config.getOrDefault(INSTANCE_WAIT_TIMEOUT, INSTANCE_WAIT_TIMEOUT_VALUE).toString().toLong()
+
+        fun isKafkaAdminClientApiEnabled(config: Map<String, Any?>) = config.getOrDefault(KAFKA_ADMIN_CLIENT_API_ENABLED, KAFKA_ADMIN_CLIENT_API_ENABLED_VALUE).toString().toBoolean()
     }
 
     private val configLifecycle: ConfigurationLifecycle
@@ -221,4 +225,5 @@ class StreamsConfig(private val log: Log, private val dbms: DatabaseManagementSe
 
     fun getInstanceWaitTimeout() = Companion.getInstanceWaitTimeout(getConfiguration())
 
+    fun isKafkaAdminClientApiEnabled() = Companion.isKafkaAdminClientApiEnabled(getConfiguration())
 }
